@@ -2,9 +2,11 @@
 
 let mic;
 let threshold = 0.01;
+let swarms = [];
 let rings = [];
-let center = null;
 let currentColor;
+let center;
+let i = 0;
 
 function setup() {
   let cnv = createCanvas(windowWidth, windowHeight);
@@ -15,54 +17,36 @@ function setup() {
 
 function draw() {
   background(220);
-
+  console.log(rings);
   let vol = mic.getLevel();
 
   if (vol > threshold && center) {
     let r = map(vol, 0, 1, 10, 200);
-
-    rings.push(new Ring(center.x, center.y, r));
+    rings.push(new Ring(center.x, center.y, r, currentColor));
   }
 
   for (let i = rings.length - 1; i >= 0; i--) {
     let ring = rings[i];
-    ring.grow();
-    ring.display();
-
-    if (ring.isDoneGrowing()) {
-      if (ring.isLargest()) {
-        ring.stopGrowing();
-        for (let j = i - 1; j >= 0; j--) {
-          if (rings[j].isInside(ring)) {
-            rings[j].stopGrowing();
-            rings[j].fadeOut();
-          }
-        }
-        rings[j].fadeOut();
-      } else {
-        ring.fadeOut();
-        if (ring.isTransparent()) {
-          rings.splice(i, 1);
-        }
-      }
-    } else if (ring.isTouchingEdge()) {
+    if (ring.isTouchingEdge()) {
       ring.stopGrowing();
       for (let j = i - 1; j >= 0; j--) {
         if (rings[j].isInside(ring)) {
           rings[j].stopGrowing();
-          rings[j].fadeOut();
         }
       }
-      ring.fadeOut();
+    } else {
+      ring.grow();
+      ring.display();
     }
   }
 }
 
 class Ring {
-  constructor(x, y, r) {
+  constructor(x, y, r, c) {
     this.x = x;
     this.y = y;
     this.r = r;
+    this.c = c;
     this.growRate = 2;
     this.isGrowing = true;
     this.alpha = 255;
@@ -71,18 +55,19 @@ class Ring {
   grow() {
     if (this.isGrowing) {
       this.r += this.growRate;
+    } else {
+      this.x = 0;
+      this.y = 0;
+      this.r = 0;
+      this.alpha -= 100;
     }
   }
 
   display() {
     noFill();
-    stroke(currentColor);
+    stroke(this.c); 
     strokeWeight(2);
     ellipse(this.x, this.y, this.r, this.r);
-  }
-
-  isDoneGrowing() {
-    return this.r > width * 2;
   }
 
   isTouchingEdge() {
@@ -115,10 +100,6 @@ class Ring {
       this.centerY === otherRing.centerY &&
       this.r < otherRing.r
     );
-  }
-
-  fadeOut() {
-    this.alpha -= 10;
   }
 
   isTransparent() {
