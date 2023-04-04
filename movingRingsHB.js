@@ -1,26 +1,70 @@
-// at http://127.0.0.1:5500/
-
-let mic;
-let threshold = 0.01;
+var serial;
+var portName = '/dev/cu.usbmodem101';
+var circleSize = 10;
+var heartRate;
+let threshold = 130;
 let swarms = [];
 let rings = [];
 let currentColor;
 let center;
 let i = 0;
 
+// Setup only runs once 
 function setup() {
-  let cnv = createCanvas(windowWidth, windowHeight);
-  cnv.mousePressed(userStartAudio);
-  mic = new p5.AudioIn();
-  mic.start();
+	createCanvas(windowWidth, windowHeight);
+  serial = new p5.SerialPort();
+  serial.on('list', printList);  // set a callback function for the serialport list event
+  serial.on('connected', serverConnected); // callback for connecting to the server
+  serial.on('open', portOpen);        // callback for the port opening
+  serial.on('data', serialEvent);     // callback for when new data arrives
+  serial.on('error', serialError);    // callback for errors
+  serial.on('close', portClose);
+
+  serial.list();
+  serial.open(portName);
 }
+
+function serverConnected() {
+  print('connected to server.');
+}
+
+function portOpen() {
+  print('the serial port opened.')
+}
+
+function serialEvent() {
+  heartRate = serial.read();
+	circleSize = heartRate;
+}
+setInterval(serialEvent, 5000);
+
+function serialError(err) {
+  print('Something went wrong with the serial port. ' + err);
+}
+
+function portClose() {
+  print('The serial port closed.');
+}
+
+function printList(portList) {
+    for(var i = 0; i < portList.length; i++) {
+        print(i + " " + portList[i]);
+    }
+}
+
+// // Draws in the browser
+// function draw() {
+//   background("#85144b");
+//   fill("#FF851B");
+//   noStroke();
+//   ellipse(width/2, height/2, circleSize, circleSize);
+// }
 
 function draw() {
   background(220);
-  let vol = mic.getLevel();
 
-  if (vol > threshold && center) {
-    let r = map(vol, 0, 1, 10, 200);
+  if (heartRate > threshold && center) {
+    let r = map(heartRate, 0, 250, 10, 200);
     rings.push(new Ring(center.x, center.y, r, currentColor));
   }
 
@@ -31,9 +75,9 @@ function draw() {
       for (let j = i-1; j >= 0; j--) {
         if(!rings[j].isInside(ring)){
           let distance = dist(ring.x, ring.y, rings[j].x, rings[j].y);
-          if (distance < ring.r) {
-            console.log("Ring " + i + " is touching ring " + j);
-          }
+          // if (distance < ring.r) {
+          //   console.log("Ring " + i + " is touching ring " + j);
+          // }
         }
       }
     }
