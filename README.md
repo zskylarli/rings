@@ -28,4 +28,5 @@ https://medium.com/@venegu.design/real-time-pulse-visualizer-fd407d389edb
 - [x] Make rings last longer
 - [ ] Change texture of rings based on other parameters
 - [ ] Add patterns to the edge of the rings 
-- [ ] Make background more aesthetically pleasing
+- [x] Make background more aesthetically pleasing
+- [ ] Alter threshold to account for general peak heartrate values 
