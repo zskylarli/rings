@@ -25,6 +25,7 @@ https://medium.com/@venegu.design/real-time-pulse-visualizer-fd407d389edb
 - Heartrate values generally around 100-120. 
 
 ## To-Do
-- [ ] Make rings last longer
+- [x] Make rings last longer
 - [ ] Change texture of rings based on other parameters
 - [ ] Add patterns to the edge of the rings 
+- [ ] Make background more aesthetically pleasing

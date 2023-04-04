@@ -2,7 +2,6 @@
 
 let mic;
 let threshold = 0.005;
-let swarms = [];
 let rings = [];
 let currentColor;
 let center;
@@ -20,7 +19,9 @@ function setup() {
 }
 
 function draw() {
-  background('#fae');
+  drawRadialGradientBackground("#FFF8DD", "#FDDEA5");
+  drawFrame();
+
   let vol = mic.getLevel();
 
   if (vol > threshold && center) {
@@ -104,11 +105,14 @@ class Ring {
   }
 
   isTouchingEdge() {
+    let frameThickness = 12;
+    let plateWidth = width - frameThickness;
+    let plateHeight = height - frameThickness;
     return (
-      this.x - this.r / 2 < 0 ||
-      this.x + this.r / 2 > width ||
-      this.y - this.r / 2 < 0 ||
-      this.y + this.r / 2 > height
+      this.x - this.r / 2 < frameThickness ||
+      this.x + this.r / 2 > plateWidth ||
+      this.y - this.r / 2 < frameThickness ||
+      this.y + this.r / 2 > plateHeight
     );
   }
 
@@ -192,4 +196,32 @@ function stopGrowingRingsInSet(ringSet) {
   for (let ring of ringSet) {
     ring.stopGrowing();
   }
+}
+
+function drawRadialGradientBackground(color1, color2) {
+  let radius = Math.sqrt(width * width + height * height) / 2;
+  let numSteps = 100;
+  let stepSize = radius / numSteps;
+
+  for (let r = radius; r > 0; r -= stepSize) {
+    let t = map(r, 0, radius, 0, 1);
+    let fillColor = lerpColor(color(color1), color(color2), t);
+    fill(fillColor);
+    noStroke();
+    ellipse(width / 2, height / 2, r * 2, r * 2);
+  }
+}
+
+function drawFrame() {
+  let outerMargin = 1;
+  let innerMargin = 10;
+  let cornerRadius = 10;
+
+  fill('#F4F3EE'); 
+  stroke('#9A9F55');
+  rect(outerMargin, outerMargin, width - 2 * outerMargin, height - 2 * outerMargin, cornerRadius);
+
+  fill('#FFF8DD');
+  stroke('#9A9F55');
+  rect(outerMargin + innerMargin, outerMargin + innerMargin, width - 2 * (outerMargin + innerMargin), height - 2 * (outerMargin + innerMargin), cornerRadius);
 }
