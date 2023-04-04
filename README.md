@@ -23,3 +23,8 @@ https://medium.com/@venegu.design/real-time-pulse-visualizer-fd407d389edb
 ## Other
 - Arduino port is set to "/dev/tty.usbmodem101". 
 - Heartrate values generally around 100-120. 
+
+## To-Do
+- [ ] Make rings last longer
+- [ ] Change texture of rings based on other parameters
+- [ ] Add patterns to the edge of the rings 

@@ -7,16 +7,21 @@ let rings = [];
 let currentColor;
 let center;
 let i = 0;
+let ringSets = [];
 
 function setup() {
   let cnv = createCanvas(windowWidth, windowHeight);
   cnv.mousePressed(userStartAudio);
   mic = new p5.AudioIn();
   mic.start();
+
+  // Add an event listener for the Clear All button
+  let clearButton = select('#clearButton');
+  clearButton.mousePressed(clearRingSets);
 }
 
 function draw() {
-  background(220);
+  background('#fae');
   let vol = mic.getLevel();
 
   if (vol > threshold && center) {
@@ -26,28 +31,35 @@ function draw() {
 
   for (let i = rings.length - 1; i >= 0; i--) {
     let ring = rings[i];
+    ring.grow();
+    ring.display();
+  }
 
-    if(ring.isLargest()){
-      for (let j = i-1; j >= 0; j--) {
-        if(!rings[j].isInside(ring)){
-          let distance = dist(ring.x, ring.y, rings[j].x, rings[j].y);
-          if (distance < ring.r) {
-            console.log("Ring " + i + " is touching ring " + j);
-          }
-        }
+  for (let i = 0; i < ringSets.length; i++) {
+    let currentSet = ringSets[i];
+    let currentLargest = currentSet[0];
+
+    for (let j = i + 1; j < ringSets.length; j++) {
+      let otherSet = ringSets[j];
+      let otherLargest = otherSet[0];
+
+      let distance = dist(currentLargest.x, currentLargest.y, otherLargest.x, otherLargest.y);
+      if (distance <= currentLargest.r / 2 + otherLargest.r / 2) {
+        currentLargest.stopGrowing();
+        otherLargest.stopGrowing();
       }
     }
 
-    if (ring.isTouchingEdge()) {
-      ring.stopGrowing();
-      for (let j = i - 1; j >= 0; j--) {
-        if (rings[j].isInside(ring)) {
-          rings[j].stopGrowing();
+    // Check if the largest ring is touching the edge of the screen
+    if (currentLargest.isTouchingEdge()) {
+      currentLargest.stopGrowing();
+
+      // Freeze the rings inside the largest ring
+      for (let j = 1; j < currentSet.length; j++) {
+        if (currentSet[j].isInside(currentLargest)) {
+          currentSet[j].stopGrowing();
         }
       }
-    } else {
-      ring.grow();
-      ring.display();
     }
   }
 }
@@ -127,11 +139,33 @@ class Ring {
 }
 
 function mouseClicked() {
+  let clearButton = select('#clearButton');
+  let buttonX = clearButton.elt.offsetLeft;
+  let buttonY = clearButton.elt.offsetTop;
+  let buttonWidth = clearButton.elt.offsetWidth;
+  let buttonHeight = clearButton.elt.offsetHeight;
+
+  // Check if the mouse click is within the button's area
+  if (
+    mouseX >= buttonX &&
+    mouseX <= buttonX + buttonWidth &&
+    mouseY >= buttonY &&
+    mouseY <= buttonY + buttonHeight
+  ) {
+    return;
+  }
+
   currentColor = generateRandomColor();
   if (center) {
     center.set(mouseX, mouseY);
   } else {
     center = createVector(mouseX, mouseY);
+  }
+
+  // Save the current set of rings and start a new set
+  if (rings.length > 0) {
+    ringSets.push(rings);
+    rings = rings.slice(); 
   }
 }
 
@@ -141,4 +175,11 @@ function generateRandomColor() {
   let bV = random(0, 255);
   let someColor = color(rV, gV, bV);
   return someColor;
+}
+
+// Add this function to clear all ring sets
+function clearRingSets() {
+  ringSets = [];
+  rings = [];
+  center = null;
 }
