@@ -152,7 +152,7 @@ class Ring {
   }
 
 	isTouchingEdge() {
-		let frameThickness = 14;
+		let frameThickness = 15;
 		let plateWidth = width - frameThickness;
 		let plateHeight = height - frameThickness;
 		return (
