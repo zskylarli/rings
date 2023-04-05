@@ -1,10 +1,10 @@
 var serial;
 var portName = '/dev/cu.usbmodem101';
-var circleSize = 10;
+var circleSize = 1;
 var heartRate;
-let threshold = 130;
+let threshold = 100;
 let rings = [];
-let currentColor;
+let ringSets = [];
 let center;
 
 function setup() {
@@ -23,6 +23,9 @@ function setup() {
 
 	let clearButton = select('#clearButton');
   clearButton.mousePressed(clearRingSets);
+
+	let thresholdInput = select('#thresholdInput')
+  thresholdInput.input(updateThreshold);
 }
 
 function serverConnected() {
@@ -53,16 +56,20 @@ function printList(portList) {
     }
 }
 
+function updateThreshold() {
+  threshold = this.elt.value;
+}
+
 function draw() {
 	drawRadialGradientBackground("#FFF8DD", "#FDDEA5");
 	drawFrame();
 
 	if (heartRate > threshold && center) {
-		let r = map(heartRate, 0, 250, 10, 200);
+		// let r = map(heartRate, 0, 250, 10, 200);
 		if (ringSets.length === 0 || ringSets[ringSets.length - 1].length === 0) {
 			ringSets.push([]);
 		}
-		ringSets[ringSets.length - 1].push(new Ring(center.x, center.y, r, currentColor));
+		ringSets[ringSets.length - 1].push(new Ring(center.x, center.y, circleSize, currentColor));
 	}
 
 	for (let i = 0; i < ringSets.length; i++) {
@@ -76,16 +83,13 @@ function draw() {
 				currentLargest.stopGrowing();
 
 				// Freeze the rings inside the largest ring
-				for (let j = 1; j < currentSet.length; j++) {
-					if (currentSet[j].isInside(currentLargest)) {
-						currentSet[j].stopGrowing();
-					}
-				}
+				stopGrowingRingsInSet(currentSet);
 			}
 
 			for (let j = 0; j < currentSet.length; j++) {
 				let ring = currentSet[j];
 				ring.grow();
+				ring.fade();
 				ring.display();
 			}
 
@@ -101,11 +105,16 @@ function draw() {
 
 						let distance = dist(currentRing.x, currentRing.y, otherRing.x, otherRing.y);
 						if (distance <= currentRing.r / 2 + otherRing.r / 2) {
-							stopGrowingRingsInSet(currentSet);
-							stopGrowingRingsInSet(otherSet);
+							fadeRingsInSet(currentSet);
+							fadeRingsInSet(otherSet);
 						}
 					}
 				}
+			}
+			if (currentSet.every(ring => ring.isFullyFaded())) {
+				ringSets.splice(i, 1);
+				i--;
+				center = null;
 			}
 		}
 	}
@@ -119,26 +128,31 @@ class Ring {
 		this.c = c;
 		this.growRate = 2;
 		this.isGrowing = true;
+		this.isFading = false;
 		this.alpha = 255;
 	}
 
 	grow() {
 		if (this.isGrowing) {
 			this.r += this.growRate;
-		} else {
-			this.alpha -= 100;
+		} 
+	}
+
+	fade() {
+		if (this.isFading) {
+			this.alpha -= 10;
 		}
 	}
 
-	display() {
-		noFill();
-		stroke(this.c); 
-		strokeWeight(2);
-		ellipse(this.x, this.y, this.r, this.r);
-	}
+  display() {
+    noFill();
+    stroke(this.c.levels[0], this.c.levels[1], this.c.levels[2], this.alpha);
+    strokeWeight(2);
+    ellipse(this.x, this.y, this.r, this.r);
+  }
 
 	isTouchingEdge() {
-		let frameThickness = 12;
+		let frameThickness = 14;
 		let plateWidth = width - frameThickness;
 		let plateHeight = height - frameThickness;
 		return (
@@ -151,6 +165,11 @@ class Ring {
 
 	stopGrowing() {
 		this.isGrowing = false;
+	}
+
+	fadeOut() {
+		this.isGrowing = false;
+		this.isFading = true;
 	}
 
 	isLargest() {
@@ -172,9 +191,9 @@ class Ring {
 		);
 	}
 
-	isTransparent() {
-		return this.alpha <= 0;
-	}
+	isFullyFaded() {
+    return this.alpha <= 0;
+  }
 
 	get centerX() {
 		return this.x;
@@ -192,12 +211,18 @@ function mouseClicked() {
 	let buttonWidth = clearButton.elt.offsetWidth;
 	let buttonHeight = clearButton.elt.offsetHeight;
 
+	let thresholdInput = select('#thresholdInput');
+	let thresholdInputX = thresholdInput.elt.offsetLeft;
+	let thresholdInputY = thresholdInput.elt.offsetTop;
+	let thresholdInputWidth = thresholdInput.elt.offsetWidth;
+	let thresholdInputHeight = thresholdInput.elt.offsetHeight;
+
 	// Check if the mouse click is within the button's area
 	if (
-		mouseX >= buttonX &&
-		mouseX <= buttonX + buttonWidth &&
-		mouseY >= buttonY &&
-		mouseY <= buttonY + buttonHeight
+		mouseX >= thresholdInputX &&
+		mouseX <= buttonX + buttonWidth + thresholdInputWidth &&
+		mouseY >= thresholdInputY &&
+		mouseY <= buttonY + buttonHeight + thresholdInputHeight
 	) {
 		return;
 	}
@@ -231,6 +256,12 @@ function stopGrowingRingsInSet(ringSet) {
 	}
 }
 
+function fadeRingsInSet(ringSet) {
+	for (let ring of ringSet) {
+		ring.fadeOut();
+	}
+}
+
 function drawRadialGradientBackground(color1, color2) {
 	let radius = Math.sqrt(width * width + height * height) / 2;
 	let numSteps = 100;
@@ -246,16 +277,18 @@ function drawRadialGradientBackground(color1, color2) {
 }
 
 function drawFrame() {
-	let outerMargin = 1;
-	let innerMargin = 10;
+	let outerMargin = 2;
+	let innerMargin = 6;
 	let cornerRadius = 10;
 
-	fill('#F4F3EE'); 
-	stroke('#9A9F55');
+	noFill();
+	stroke("#AAAE8F");
+	strokeWeight(5);
 	rect(outerMargin, outerMargin, width - 2 * outerMargin, height - 2 * outerMargin, cornerRadius);
 
-	fill('#FFF8DD');
-	stroke('#9A9F55');
-	rect(outerMargin + innerMargin, outerMargin + innerMargin, width - 2 * (outerMargin + innerMargin), height - 2 * (outerMargin + innerMargin), cornerRadius);
+	noFill();
+  stroke(color('rgba(186, 192, 190, 0.4)'));
+	strokeWeight(11);
+  rect(outerMargin + innerMargin, outerMargin + innerMargin, width - 2 * (outerMargin + innerMargin), height - 2 * (outerMargin + innerMargin), cornerRadius);
 }
 	
