@@ -12,7 +12,6 @@ function setup() {
   cnv.mousePressed(userStartAudio);
   mic = new p5.AudioIn();
   mic.start();
-  getAudioContext().resume();
 
   let clearButton = select('#clearButton');
   clearButton.mousePressed(clearRingSets);
@@ -20,6 +19,7 @@ function setup() {
 
 function draw() {
   drawRadialGradientBackground("#FFF8DD", "#FDDEA5");
+
   drawFrame();
 
   let vol = mic.getLevel();

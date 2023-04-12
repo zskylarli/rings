@@ -10,16 +10,31 @@
     <link rel="stylesheet" type="text/css" href="style.css">
 
     <style> 
-      button {
+      #clearButton {
+        position: fixed;
+        bottom: 50px;
+        right: 90px;
+      }
+      #showAllButton {
+        position: fixed;
+        bottom: 50px;
+        right: 20px;
+      }
+      #soundButton {
         position: fixed;
         bottom: 20px;
         right: 20px;
       }
-      #thresholdInput {
+      #downloadButton {
         position: fixed;
         bottom: 20px;
-        right: 100px;
-        width: 50px;
+        right: 80px;
+      }
+      #thresholdInput {
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        width: 100px;
       }
     </style>
 
@@ -33,5 +48,8 @@
   <body>
     <input type="number" id="thresholdInput" value="100">
     <button id="clearButton">Clear All</button>
+    <button id="showAllButton">Show All</button>
+    <button id="downloadButton">Download</button>
+    <button id="soundButton">Sound</button>
   </body>
 </html>

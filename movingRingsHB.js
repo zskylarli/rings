@@ -1,11 +1,24 @@
 var serial;
-var portName = '/dev/cu.usbmodem101';
+var portName = '/dev/tty.usbmodem101';
 var circleSize = 1;
 var heartRate;
-let threshold = 100;
+let threshold = 120;
 let rings = [];
 let ringSets = [];
 let center;
+var count = 30;
+var color1 = "#666666";
+var heartRateLine; 
+let pulseData = []; 
+let minHeartRate = 200;
+let lastMinTime = 0; 
+let beatsPerMinute = 0; 
+let currentR = 0;
+let previousR = 0;
+let RR = 0;
+let oscillator;
+let playing = false;
+let showingRings = false;
 
 function setup() {
 	createCanvas(windowWidth, windowHeight);
@@ -26,6 +39,18 @@ function setup() {
 
 	let thresholdInput = select('#thresholdInput')
   thresholdInput.input(updateThreshold);
+
+	let soundButton = select('#soundButton');
+  soundButton.mousePressed(playSound);
+
+	let downloadButton = select('#downloadButton');
+  downloadButton.mousePressed(download);
+
+	let showAllButton = select('#showAllButton');
+  showAllButton.mousePressed(showAll);
+
+	oscillator = new p5.Oscillator(); // Create a new sine wave oscillator
+  oscillator.setType('sine'); // Set the oscillator type to sine wave
 }
 
 function serverConnected() {
@@ -38,7 +63,7 @@ function portOpen() {
 
 function serialEvent() {
   heartRate = serial.read();
-	circleSize = heartRate;
+  circleSize = heartRate;
 }
 setInterval(serialEvent, 5000);
 
@@ -64,8 +89,11 @@ function draw() {
 	drawRadialGradientBackground("#FFF8DD", "#FDDEA5");
 	drawFrame();
 
+	fill(color('rgba(255, 232, 186,0.6)'));
+  noStroke();
+  ellipse(width/2, height/2, circleSize);
+
 	if (heartRate > threshold && center) {
-		// let r = map(heartRate, 0, 250, 10, 200);
 		if (ringSets.length === 0 || ringSets[ringSets.length - 1].length === 0) {
 			ringSets.push([]);
 		}
@@ -112,12 +140,11 @@ function draw() {
 				}
 			}
 			if (currentSet.every(ring => ring.isFullyFaded())) {
-				ringSets.splice(i, 1);
-				i--;
 				center = null;
 			}
 		}
 	}
+	pulseChart();
 }
 
 class Ring {
@@ -126,7 +153,7 @@ class Ring {
 		this.y = y;
 		this.r = r;
 		this.c = c;
-		this.growRate = 2;
+		this.growRate = 1;
 		this.isGrowing = true;
 		this.isFading = false;
 		this.alpha = 255;
@@ -152,7 +179,7 @@ class Ring {
   }
 
 	isTouchingEdge() {
-		let frameThickness = 15;
+		let frameThickness = 20;
 		let plateWidth = width - frameThickness;
 		let plateHeight = height - frameThickness;
 		return (
@@ -206,8 +233,6 @@ class Ring {
 
 function mouseClicked() {
 	let clearButton = select('#clearButton');
-	let buttonX = clearButton.elt.offsetLeft;
-	let buttonY = clearButton.elt.offsetTop;
 	let buttonWidth = clearButton.elt.offsetWidth;
 	let buttonHeight = clearButton.elt.offsetHeight;
 
@@ -217,12 +242,11 @@ function mouseClicked() {
 	let thresholdInputWidth = thresholdInput.elt.offsetWidth;
 	let thresholdInputHeight = thresholdInput.elt.offsetHeight;
 
-	// Check if the mouse click is within the button's area
 	if (
 		mouseX >= thresholdInputX &&
-		mouseX <= buttonX + buttonWidth + thresholdInputWidth &&
-		mouseY >= thresholdInputY &&
-		mouseY <= buttonY + buttonHeight + thresholdInputHeight
+		mouseX <= width &&
+		mouseY >= 0 &&
+		mouseY <= thresholdInputHeight
 	) {
 		return;
 	}
@@ -257,9 +281,18 @@ function stopGrowingRingsInSet(ringSet) {
 }
 
 function fadeRingsInSet(ringSet) {
-	for (let ring of ringSet) {
-		ring.fadeOut();
+	if(!showingRings) {
+		for (let ring of ringSet) {
+			ring.fadeOut();
+		}
 	}
+}
+
+function showRingsInSet(ringSet) {
+  for (let ring of ringSet) {
+    ring.alpha = 255;
+    ring.isFading = false;
+  }
 }
 
 function drawRadialGradientBackground(color1, color2) {
@@ -291,4 +324,97 @@ function drawFrame() {
 	strokeWeight(11);
   rect(outerMargin + innerMargin, outerMargin + innerMargin, width - 2 * (outerMargin + innerMargin), height - 2 * (outerMargin + innerMargin), cornerRadius);
 }
-	
+
+function pulseChart() {
+  let maxDataPoints = 180; // Maximum number of data points to show (3 seconds at 60 fps)
+  let graphWidth = 200; // Width of the graph
+  let graphHeight = 100; // Height of the graph
+  let graphX = width - graphWidth - 20; // X-coordinate of the graph
+  let graphY = 50; // Y-coordinate of the graph
+  
+  // Draw the rectangular box
+  noFill();
+  stroke(0);
+  strokeWeight(2);
+  rect(graphX, graphY, graphWidth, graphHeight);
+  
+  // Set the background color of the box to transparent
+  fill(0, 0, 0, 0);
+  noStroke();
+  rect(graphX, graphY, graphWidth, graphHeight);
+
+	getBPM();
+  
+  if (heartRate >= 0 && heartRate <= 255) {
+    heartRateLine = map(heartRate, 0, 255, 0, 1);
+    pulseData.push(heartRateLine);
+  }
+
+  // Trim the pulseData array if it exceeds the maximum number of data points
+  if (pulseData.length > maxDataPoints) {
+    pulseData.splice(0, 1);
+  }
+
+  // Draw the pulse graph inside the rectangular box
+  noFill();
+  stroke(color1);
+  strokeWeight(2);
+  curveTightness(1.0); // Increase the curve tightness
+  beginShape();
+  for (let i = 0; i < pulseData.length; i++) {
+    let x = map(i, 0, pulseData.length - 1, graphX, graphX + graphWidth);
+    let y = map(pulseData[i]*2, 0, 2, graphY, graphY + graphHeight);
+    curveVertex(x, y);
+  }
+  endShape();
+
+	// Draw the BPM text inside the rectangular box
+	fill(0);
+	noStroke();
+	textSize(16);
+	text("BPM: " + int(beatsPerMinute), graphX + 10, graphY + 20);
+}
+
+function getBPM() {
+	let t = millis();
+	let leeway = 2;
+
+	if (heartRate < minHeartRate && heartRate >= 50) {
+		minHeartRate = heartRate;
+		let frequency = map(beatsPerMinute, 40, 200, 100, 1000); 
+		oscillator.freq(frequency); 
+	}
+
+	if (heartRate <= minHeartRate + leeway && heartRate > minHeartRate - leeway) {
+		currentR = t;
+		if(previousR != 0 && currentR - previousR > 300){
+			RR = currentR - previousR;
+			let tempBeatsPerMinute = 60 / RR * 1000; 
+			if(tempBeatsPerMinute > 50){
+				beatsPerMinute = tempBeatsPerMinute;
+			}
+		}
+		previousR = currentR;
+	}
+}
+
+function playSound() {
+	oscillator.start();
+	if (playing) {
+		oscillator.amp(0, 0.1); // Set the amplitude to 0 with a short attack time to stop the oscillator smoothly
+	} else {
+		oscillator.amp(0.5, 0.1); // Set the amplitude to 0.5 with a short attack time to start the oscillator smoothly
+	}
+	playing = !playing; // Toggle the playing flag
+}
+
+function download() {
+  saveCanvas('myCanvas', 'jpg');
+}
+
+function showAll() {
+	showingRings = true;
+  for (let ringSet of ringSets) {
+    showRingsInSet(ringSet);
+  }
+}

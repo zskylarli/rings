@@ -31,3 +31,7 @@ https://medium.com/@venegu.design/real-time-pulse-visualizer-fd407d389edb
 - [x] Make background more aesthetically pleasing
 - [x] Alter threshold to account for general peak heartrate values 
 - [ ] Adapt for touch screen(?)
+- [x] Sound
+- [x] Disappear when touched but save to show at end 
+- [ ] Show actual p mirabilis images before disappearing or a tree ring etc. 
+- [ ] Replay rings that are currently frozen
