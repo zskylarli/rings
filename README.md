@@ -26,7 +26,7 @@ https://medium.com/@venegu.design/real-time-pulse-visualizer-fd407d389edb
 
 ## To-Do
 - [x] Make rings last longer
-- [ ] Change texture of rings based on other parameters
+- [x] Change texture of rings based on other parameters
 - [ ] Add patterns to the edge of the rings 
 - [x] Make background more aesthetically pleasing
 - [x] Alter threshold to account for general peak heartrate values 
@@ -34,4 +34,4 @@ https://medium.com/@venegu.design/real-time-pulse-visualizer-fd407d389edb
 - [x] Sound
 - [x] Disappear when touched but save to show at end 
 - [ ] Show actual p mirabilis images before disappearing or a tree ring etc. 
-- [ ] Replay rings that are currently frozen
+- [x] Replay rings that are currently frozen

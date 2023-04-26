@@ -7,7 +7,6 @@ let rings = [];
 let ringSets = [];
 let center;
 var count = 30;
-var color1 = "#666666";
 var heartRateLine; 
 let pulseData = []; 
 let minHeartRate = 200;
@@ -86,8 +85,9 @@ function updateThreshold() {
 }
 
 function draw() {
-	drawRadialGradientBackground("#FFF8DD", "#FDDEA5");
+	drawBg("#1BA0DF","#20EAD8");
 	drawFrame();
+	pulseChart();
 
 	fill(color('rgba(255, 232, 186,0.6)'));
   noStroke();
@@ -97,7 +97,7 @@ function draw() {
 		if (ringSets.length === 0 || ringSets[ringSets.length - 1].length === 0) {
 			ringSets.push([]);
 		}
-		ringSets[ringSets.length - 1].push(new Ring(center.x, center.y, circleSize, currentColor));
+		ringSets[ringSets.length - 1].push(new Ring(center.x, center.y, circleSize, currentColor, beatsPerMinute));
 	}
 
 	for (let i = 0; i < ringSets.length; i++) {
@@ -144,11 +144,10 @@ function draw() {
 			}
 		}
 	}
-	pulseChart();
 }
 
 class Ring {
-	constructor(x, y, r, c) {
+	constructor(x, y, r, c, alpha) {
 		this.x = x;
 		this.y = y;
 		this.r = r;
@@ -156,7 +155,7 @@ class Ring {
 		this.growRate = 1;
 		this.isGrowing = true;
 		this.isFading = false;
-		this.alpha = 255;
+		this.alpha = map(alpha, 40, 200, 0, 255);
 	}
 
 	grow() {
@@ -242,14 +241,41 @@ function mouseClicked() {
 	let thresholdInputWidth = thresholdInput.elt.offsetWidth;
 	let thresholdInputHeight = thresholdInput.elt.offsetHeight;
 
+  // Change: Check if the mouse click is within the area of the threshold input field
 	if (
 		mouseX >= thresholdInputX &&
-		mouseX <= width &&
-		mouseY >= 0 &&
-		mouseY <= thresholdInputHeight
+		mouseX <= thresholdInputX + thresholdInputWidth &&
+		mouseY >= thresholdInputY &&
+		mouseY <= thresholdInputY + thresholdInputHeight
 	) {
 		return;
 	}
+
+  // Change: Check if the mouse click is within the area of the clearButton
+  let clearButtonX = clearButton.elt.offsetLeft;
+  let clearButtonY = clearButton.elt.offsetTop;
+  if (
+    mouseX >= clearButtonX &&
+    mouseX <= clearButtonX + buttonWidth &&
+    mouseY >= clearButtonY &&
+    mouseY <= clearButtonY + buttonHeight
+  ) {
+    return;
+  }
+
+  // Change: Check if the mouse click is within the area of the pulse chart
+  let graphWidth = 200; // Width of the graph
+  let graphHeight = 100; // Height of the graph
+  let graphX = width - graphWidth - 20; // X-coordinate of the graph
+  let graphY = 50; // Y-coordinate of the graph
+  if (
+    mouseX >= graphX &&
+    mouseX <= graphX + graphWidth &&
+    mouseY >= graphY &&
+    mouseY <= graphY + graphHeight
+  ) {
+    return;
+  }
 
 	currentColor = generateRandomColor();
 	if (center) {
@@ -259,6 +285,7 @@ function mouseClicked() {
 	}
 	ringSets.push([]);
 }
+
 
 function generateRandomColor() {
 	let rV = random(0, 255);
@@ -295,20 +322,6 @@ function showRingsInSet(ringSet) {
   }
 }
 
-function drawRadialGradientBackground(color1, color2) {
-	let radius = Math.sqrt(width * width + height * height) / 2;
-	let numSteps = 100;
-	let stepSize = radius / numSteps;
-
-	for (let r = radius; r > 0; r -= stepSize) {
-		let t = map(r, 0, radius, 0, 1);
-		let fillColor = lerpColor(color(color1), color(color2), t);
-		fill(fillColor);
-		noStroke();
-		ellipse(width / 2, height / 2, r * 2, r * 2);
-	}
-}
-
 function drawFrame() {
 	let outerMargin = 2;
 	let innerMargin = 6;
@@ -325,13 +338,36 @@ function drawFrame() {
   rect(outerMargin + innerMargin, outerMargin + innerMargin, width - 2 * (outerMargin + innerMargin), height - 2 * (outerMargin + innerMargin), cornerRadius);
 }
 
+function drawBg(color1, color2) {
+	let radius = Math.sqrt(width * width + height * height) / 2;
+  let numSteps = 100;
+  let stepSize = radius / numSteps;
+
+  for (let r = radius; r > 0; r -= stepSize) {
+    let t = map(r, 0, radius, 0, 1);
+    let fillColor = lerpColor(color(color1), color(color2), t);
+    fill(fillColor);
+    noStroke();
+    ellipse(width / 2, height / 2, r * 2, r * 2);
+  }
+}
+
 function pulseChart() {
-  let maxDataPoints = 180; // Maximum number of data points to show (3 seconds at 60 fps)
+	let maxDataPoints = 180; // Maximum number of data points to show (3 seconds at 60 fps)
   let graphWidth = 200; // Width of the graph
   let graphHeight = 100; // Height of the graph
   let graphX = width - graphWidth - 20; // X-coordinate of the graph
   let graphY = 50; // Y-coordinate of the graph
-  
+
+	let chartBackgroundMargin = 5;
+  let chartBackgroundX = graphX - chartBackgroundMargin;
+  let chartBackgroundY = graphY - chartBackgroundMargin;
+  let chartBackgroundWidth = graphWidth + 2 * chartBackgroundMargin;
+  let chartBackgroundHeight = graphHeight + 2 * chartBackgroundMargin;
+  fill(255); // Change this to the background color of your canvas
+  noStroke();
+  rect(chartBackgroundX, chartBackgroundY, chartBackgroundWidth, chartBackgroundHeight);
+
   // Draw the rectangular box
   noFill();
   stroke(0);
@@ -357,13 +393,13 @@ function pulseChart() {
 
   // Draw the pulse graph inside the rectangular box
   noFill();
-  stroke(color1);
+  stroke("#666666");
   strokeWeight(2);
   curveTightness(1.0); // Increase the curve tightness
   beginShape();
   for (let i = 0; i < pulseData.length; i++) {
     let x = map(i, 0, pulseData.length - 1, graphX, graphX + graphWidth);
-    let y = map(pulseData[i]*2, 0, 2, graphY, graphY + graphHeight);
+    let y = map(pulseData[i] * 10, 0, 10, graphY, graphY + graphHeight);
     curveVertex(x, y);
   }
   endShape();
@@ -375,9 +411,16 @@ function pulseChart() {
 	text("BPM: " + int(beatsPerMinute), graphX + 10, graphY + 20);
 }
 
+let lastMinHeartRateUpdate = 0;
+
 function getBPM() {
 	let t = millis();
-	let leeway = 2;
+	let leeway = 3;
+
+	if (t - lastMinHeartRateUpdate > 3000) {
+    minHeartRate = 200; // Reset minHeartRate to a high value
+    lastMinHeartRateUpdate = t;
+  }
 
 	if (heartRate < minHeartRate && heartRate >= 50) {
 		minHeartRate = heartRate;
@@ -390,7 +433,7 @@ function getBPM() {
 		if(previousR != 0 && currentR - previousR > 300){
 			RR = currentR - previousR;
 			let tempBeatsPerMinute = 60 / RR * 1000; 
-			if(tempBeatsPerMinute > 50){
+			if(tempBeatsPerMinute > 40){
 				beatsPerMinute = tempBeatsPerMinute;
 			}
 		}

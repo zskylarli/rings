@@ -225,3 +225,44 @@ function drawFrame() {
   stroke('#9A9F55');
   rect(outerMargin + innerMargin, outerMargin + innerMargin, width - 2 * (outerMargin + innerMargin), height - 2 * (outerMargin + innerMargin), cornerRadius);
 }
+
+let xRW = 0;
+let yRW = 0;
+let rRW = 0;
+let gRW = 0;
+let bRW = 0;
+
+function drawBg(){
+  for(let i = 0; i < 100; i++){
+    if (i % 50 === 0) {
+			drawBg2();
+		}
+  }
+}
+
+function drawBg2() {
+	let stepSize = 100;
+	let colorChange = 50;
+	let circleSizeRW = 100;
+
+	let nextXRW = xRW + random(-stepSize, stepSize);
+	let nextYRW = yRW + random(-stepSize, stepSize);
+	nextXRW = constrain(nextXRW, 0, width);
+	nextYRW = constrain(nextYRW, 0, height);
+
+	rRW += random(-colorChange, colorChange);
+	gRW += random(-colorChange, colorChange);
+	bRW += random(-colorChange, colorChange);
+	rRW = constrain(rRW, 0, 0);
+	gRW = constrain(gRW, 0, 255);
+	bRW = constrain(bRW, 0, 255);
+
+	let alphaRW = 5; // Set the transparency value (0-255)
+	fill(rRW, gRW, bRW, alphaRW); // Use the fill function to set the color and transparency
+	noStroke(); // Remove the stroke for the circles
+
+	ellipse(nextXRW, nextYRW, circleSizeRW, circleSizeRW); // Draw a circle at the new position
+
+	xRW = nextXRW;
+	yRW = nextYRW;
+}
