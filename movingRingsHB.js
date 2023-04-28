@@ -231,34 +231,22 @@ class Ring {
 }
 
 function mouseClicked() {
-	let clearButton = select('#clearButton');
-	let buttonWidth = clearButton.elt.offsetWidth;
-	let buttonHeight = clearButton.elt.offsetHeight;
+	let soundButton = select('#soundButton');
+  let buttonWidth = soundButton.elt.offsetWidth;
+  let buttonHeight = soundButton.elt.offsetHeight;
 
-	let thresholdInput = select('#thresholdInput');
-	let thresholdInputX = thresholdInput.elt.offsetLeft;
-	let thresholdInputY = thresholdInput.elt.offsetTop;
-	let thresholdInputWidth = thresholdInput.elt.offsetWidth;
-	let thresholdInputHeight = thresholdInput.elt.offsetHeight;
+  let thresholdInput = select('#thresholdInput');
+  let thresholdInputX = thresholdInput.elt.offsetLeft;
+  let thresholdInputY = thresholdInput.elt.offsetTop;
+  let thresholdInputWidth = thresholdInput.elt.offsetWidth;
+  let thresholdInputHeight = thresholdInput.elt.offsetHeight;
 
   // Change: Check if the mouse click is within the area of the threshold input field
-	if (
-		mouseX >= thresholdInputX &&
-		mouseX <= thresholdInputX + thresholdInputWidth &&
-		mouseY >= thresholdInputY &&
-		mouseY <= thresholdInputY + thresholdInputHeight
-	) {
-		return;
-	}
-
-  // Change: Check if the mouse click is within the area of the clearButton
-  let clearButtonX = clearButton.elt.offsetLeft;
-  let clearButtonY = clearButton.elt.offsetTop;
   if (
-    mouseX >= clearButtonX &&
-    mouseX <= clearButtonX + buttonWidth &&
-    mouseY >= clearButtonY &&
-    mouseY <= clearButtonY + buttonHeight
+    mouseX >= 0 &&
+    mouseX <= thresholdInputX + thresholdInputWidth + buttonWidth &&
+    mouseY >= 0 &&
+    mouseY <= thresholdInputY + thresholdInputHeight + buttonHeight
   ) {
     return;
   }
